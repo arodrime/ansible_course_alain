@@ -1,0 +1,40 @@
+---
+# Playbook pour:
+# * configurer un serveur web
+# * installer MySQL
+# Modifier fichier servi si Apache2 tourne
+# Démarrer Apache2
+
+
+- name: Configuration d’un serveur web
+  hosts: all
+  remote_user: root
+
+  vars:
+    packages_name: ["apache2", "mysql-server"]
+    document_root: "/var/www/html"
+
+  tasks:
+    - name: Installer le paquet web
+      apt:
+        update_cache: yes
+        name: "{{ item }}"
+        state: present
+      loop: "{{ packages_name }}"
+
+    - name: Gather the package facts
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Définir une page d'accueil
+      copy:
+        content: "<h1>Bonjour depuis Ansible</h1>"
+        dest: "{{ document_root }}/index.html"
+      when: "'apache2' in ansible_facts.packages"
+
+    - name: Démarrer et activer le service
+      service:
+        name: "apache2"
+        state: started
+        enabled: yes
+
