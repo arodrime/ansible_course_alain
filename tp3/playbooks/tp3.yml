@@ -1,0 +1,73 @@
+---
+# Playbook pour:
+# * configurer un serveur web
+# * installer MySQL
+# Modifier fichier servi si Apache2 tourne
+# Démarrer Apache2
+
+
+- name: Configuration d’un serveur web
+  hosts: all
+  remote_user: root
+
+  vars:
+    packages_name_webservers: ["apache2", "mysql-server"]
+    packages_name_lolservers: ["git","nginx","cowsay"]
+    document_root: "/var/www/html"
+
+  tasks:
+    - name: Debug
+      debug:
+        var: hostvars[inventory_hostname].number
+
+    - name: Set hostnames
+      ansible.builtin.hostname:
+        name: "node{{ hostvars[inventory_hostname].number }}"
+
+    - name: Installer les paquet web
+      ansible.builtin.apt:
+        update_cache: yes
+        name: "{{ item }}"
+        state: present
+      loop: "{{ packages_name_webservers }}"
+      when: inventory_hostname in groups['webservers']
+
+    - name: Installer les paquet meuhlol
+      apt:
+        update_cache: yes
+        name: "{{ item }}"
+        state: present
+      loop: "{{ packages_name_lolservers }}"
+      when: inventory_hostname in groups['lolservers']
+
+    - name: install ufw on ubuntu servers
+      ansible.builtin.apt:
+        update_cache: no
+        name: 'ufw'
+        state: present
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Gather the package facts
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Définir une page d'accueil custom
+      copy:
+        content: "<h1>Bienvenue sur le serveur {{ hostvars[inventory_hostname].number }}</h1>"
+        dest: "{{ document_root }}/index.html"
+      when: "'apache2' in ansible_facts.packages or 'nginx' in ansible_facts.packages"
+
+    - name: Démarrer et activer le service
+      service:
+        name: "apache2"
+        state: started
+        enabled: yes
+      when: inventory_hostname in groups['webservers']
+
+    - name: Démarrer et activer le service
+      service:
+        name: "nginx"
+        state: started
+        enabled: yes
+      when: inventory_hostname in groups['lolservers']
+
