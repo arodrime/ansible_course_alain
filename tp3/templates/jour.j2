@@ -1,0 +1,9 @@
+{% if before_noon and odd %}
+impair et avant midi
+{% elif before_noon and not odd %}
+pair et avant midi
+{% elif not before_noon and odd %}
+impair et après midi
+{% else %}
+pair et après midi
+{% endif %}

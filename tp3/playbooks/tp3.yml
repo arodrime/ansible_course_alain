@@ -71,3 +71,21 @@
         enabled: yes
       when: inventory_hostname in groups['lolservers']
 
+    - name: Set timezone to Europe/Paris
+      community.general.timezone:
+        name: Europe/Paris
+
+    - name: Get day and time
+      set_fact:
+        odd: "{{ (now(utc=false,fmt='%d') | int % 2) | bool }}"
+        before_noon: "{{ (now(utc=false,fmt='%H') | int < 12) | bool }}"
+
+    - name: Template 'jour' file to /etc/jour
+      ansible.builtin.template:
+        #        src: "{{ playbook_dir }}/../templates/jour.j2"
+        src: "../templates/jour.j2"
+        dest: /etc/jour
+        owner: root
+        group: root
+        mode: '0644'
+
